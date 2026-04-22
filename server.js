@@ -1,5 +1,4 @@
 const express = require("express");
-const cheerio = require("cheerio");
 const sharp = require("sharp");
 const stirlitzJokes = require("./stirlitz.json");
 const allJokes = require("./jokes.json");
@@ -7,70 +6,7 @@ const allJokes = require("./jokes.json");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const MAX_LINES = 5;
-const MAX_TEXT_LENGTH = 250;
-const MAX_ATTEMPTS = 10;
 const CACHE_TTL = 5_000;
-
-// Content filter: profanity, group slurs, political
-const BANNED_PATTERNS = [
-  // Russian mat (profanity) — stems cover all morphological forms
-  /хуй|хуя|хую|хуем|нахуй|похуй|охуе/i,
-  /пизд/i,
-  /еба|ёба|заеб|выеб|наеб|поеб|уеб|ебан|ёбан/i,
-  /блядь|блять|бляди|блядск/i,
-  /мудак|мудил/i,
-  /залуп/i,
-  /шлюх/i,
-  /сука|суки|суку|сукой/i,
-  // Group slurs
-  /негр/i,
-  /пидор|пидар|педик/i,
-  /чурк/i,
-  /жид(?!к)/i,           // жид-slur, but not жидкий/жидкость
-  /хач(?!апури)/i,       // хач-slur, but not хачапури
-  /ниггер/i,
-  // Political: Russia/Ukraine conflict, specific leaders
-  /путин/i,
-  /хохол|хохлы|хохла|хохлов/i,
-  /китаец|китайц/i,
-  /зеленск/i,
-  /навальн/i,
-  /лукашенк/i,
-];
-
-function containsBannedContent(text) {
-  return BANNED_PATTERNS.some((p) => p.test(text));
-}
-
-function fitsIn200px(html, plainText) {
-  const lines = (html.match(/<br\s*\/?>/gi) || []).length + 1;
-  return lines <= MAX_LINES && plainText.length <= MAX_TEXT_LENGTH;
-}
-
-async function fetchJoke() {
-  for (let i = 0; i < MAX_ATTEMPTS; i++) {
-    const res = await fetch("https://baneks.ru/random", {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (compatible; AnekdotWidget/1.0; +https://github.com)",
-      },
-    });
-    const html = await res.text();
-    const $ = cheerio.load(html);
-    const el = $("article p");
-    const jokeHtml = el.html();
-    const jokeText = el.text();
-    if (
-      jokeHtml &&
-      fitsIn200px(jokeHtml, jokeText) &&
-      !containsBannedContent(jokeText)
-    ) {
-      return jokeHtml.trim().replace(/<br\s*\/?>\s*/gi, "<br>");
-    }
-  }
-  return null;
-}
 
 // --- Image generation helpers ---
 
@@ -227,29 +163,6 @@ function renderPage(jokeHtml, href = "/") {
       btn.style.color = l < 55 ? "#fff" : "#1a1a1a";
     })();
   </script>
-</body>
-</html>`;
-}
-
-function renderError() {
-  return `<!DOCTYPE html>
-<html lang="ru">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Анекдот дня</title>
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      display: flex; align-items: center; justify-content: center;
-      min-height: 100vh; margin: 0; padding: 20px;
-      color: #666;
-    }
-    a { color: #2563eb; }
-  </style>
-</head>
-<body>
-  <p>Не удалось загрузить анекдот. <a href="/">Попробовать снова</a></p>
 </body>
 </html>`;
 }
