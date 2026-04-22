@@ -9,7 +9,7 @@ const PORT = process.env.PORT || 3000;
 const MAX_LINES = 5;
 const MAX_TEXT_LENGTH = 250;
 const MAX_ATTEMPTS = 10;
-const CACHE_TTL = 10_000;
+const CACHE_TTL = 5_000;
 
 // Content filter: profanity, group slurs, political
 const BANNED_PATTERNS = [
