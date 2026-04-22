@@ -27,7 +27,7 @@ async function fetchJoke() {
     const jokeHtml = el.html();
     const jokeText = el.text();
     if (jokeHtml && fitsIn200px(jokeHtml, jokeText)) {
-      return jokeHtml.trim();
+      return jokeHtml.trim().replace(/<br\s*\/?>\s*/gi, "<br>");
     }
   }
   return null;
@@ -60,7 +60,7 @@ function renderPage(jokeHtml) {
     .joke {
       font-size: 16px;
       line-height: 1.6;
-      white-space: pre-line;
+      white-space: normal;
     }
 
     .actions {
