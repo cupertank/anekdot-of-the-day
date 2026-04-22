@@ -4,36 +4,29 @@ const cheerio = require("cheerio");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-let cache = { date: null, jokes: [] };
+const MAX_LINES = 5;
+const MAX_ATTEMPTS = 5;
 
-async function fetchJokes() {
-  const today = new Date().toISOString().slice(0, 10);
-  if (cache.date === today && cache.jokes.length > 0) {
-    return cache.jokes;
-  }
+function countLines(html) {
+  return (html.match(/<br\s*\/?>/gi) || []).length + 1;
+}
 
-  const res = await fetch("https://www.anekdot.ru/release/anekdot/day/", {
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0 (compatible; AnekdotWidget/1.0; +https://github.com)",
-    },
-  });
-  const html = await res.text();
-  const $ = cheerio.load(html);
-
-  const jokes = [];
-  $(".text").each((_, el) => {
-    const text = $(el).html();
-    if (text && text.trim().length > 0) {
-      jokes.push(text.trim());
+async function fetchJoke() {
+  for (let i = 0; i < MAX_ATTEMPTS; i++) {
+    const res = await fetch("https://baneks.ru/random", {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (compatible; AnekdotWidget/1.0; +https://github.com)",
+      },
+    });
+    const html = await res.text();
+    const $ = cheerio.load(html);
+    const joke = $("article p").html();
+    if (joke && countLines(joke) <= MAX_LINES) {
+      return joke.trim();
     }
-  });
-
-  if (jokes.length > 0) {
-    cache = { date: today, jokes };
   }
-
-  return jokes;
+  return null;
 }
 
 function renderPage(jokeHtml) {
@@ -52,7 +45,7 @@ function renderPage(jokeHtml) {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       background: transparent;
       color: #1a1a1a;
-      padding: 16px;
+      padding: 10px;
     }
 
     .card {
@@ -67,7 +60,7 @@ function renderPage(jokeHtml) {
     }
 
     .actions {
-      margin-top: 16px;
+      margin-top: 8px;
       display: flex;
       gap: 12px;
       flex-wrap: wrap;
@@ -76,8 +69,8 @@ function renderPage(jokeHtml) {
 
     .btn {
       display: inline-block;
-      padding: 8px 20px;
-      font-size: 14px;
+      padding: 6px 16px;
+      font-size: 13px;
       border: none;
       border-radius: 8px;
       cursor: pointer;
@@ -87,14 +80,7 @@ function renderPage(jokeHtml) {
 
     .btn:hover { filter: brightness(0.85); }
 
-    .source {
-      margin-top: 20px;
-      font-size: 12px;
-      color: #999;
-    }
-
-    .source a { color: #999; }
-  </style>
+</style>
 </head>
 <body>
   <div class="card">
@@ -102,7 +88,6 @@ function renderPage(jokeHtml) {
     <div class="actions">
       <a class="btn" id="btn" href="/">Ещё анекдот</a>
     </div>
-    <div class="source">Источник: <a href="https://www.anekdot.ru" target="_blank" rel="noopener">anekdot.ru</a></div>
   </div>
   <script>
     (function() {
@@ -113,10 +98,6 @@ function renderPage(jokeHtml) {
       btn.style.background = "hsl(" + h + "," + s + "%," + l + "%)";
       btn.style.color = l < 55 ? "#fff" : "#1a1a1a";
     })();
-    window.addEventListener("load", function() {
-      var h = document.documentElement.scrollHeight;
-      window.parent.postMessage({ type: "resize", height: h }, "*");
-    });
   </script>
 </body>
 </html>`;
@@ -154,12 +135,11 @@ app.use((req, res, next) => {
 app.get("/", async (req, res) => {
   console.log(`[${new Date().toISOString()}] GET / from ${req.ip}`);
   try {
-    const jokes = await fetchJokes();
-    console.log(`[${new Date().toISOString()}] Serving from cache: ${jokes.length} jokes available`);
-    if (jokes.length === 0) {
+    const joke = await fetchJoke();
+    if (!joke) {
       return res.send(renderError());
     }
-    const joke = jokes[Math.floor(Math.random() * jokes.length)];
+    console.log(`[${new Date().toISOString()}] Serving joke (${joke.length} chars)`);
     res.send(renderPage(joke));
   } catch (err) {
     console.error(`[${new Date().toISOString()}] Failed to fetch jokes:`, err.message);
