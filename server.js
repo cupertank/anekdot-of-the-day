@@ -5,10 +5,12 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 const MAX_LINES = 5;
-const MAX_ATTEMPTS = 5;
+const MAX_TEXT_LENGTH = 250;
+const MAX_ATTEMPTS = 10;
 
-function countLines(html) {
-  return (html.match(/<br\s*\/?>/gi) || []).length + 1;
+function fitsIn200px(html, plainText) {
+  const lines = (html.match(/<br\s*\/?>/gi) || []).length + 1;
+  return lines <= MAX_LINES && plainText.length <= MAX_TEXT_LENGTH;
 }
 
 async function fetchJoke() {
@@ -21,9 +23,11 @@ async function fetchJoke() {
     });
     const html = await res.text();
     const $ = cheerio.load(html);
-    const joke = $("article p").html();
-    if (joke && countLines(joke) <= MAX_LINES) {
-      return joke.trim();
+    const el = $("article p");
+    const jokeHtml = el.html();
+    const jokeText = el.text();
+    if (jokeHtml && fitsIn200px(jokeHtml, jokeText)) {
+      return jokeHtml.trim();
     }
   }
   return null;
