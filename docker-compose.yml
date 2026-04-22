@@ -1,0 +1,8 @@
+services:
+  anekdot:
+    build: .
+    ports:
+      - "${PORT:-3000}:3000"
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
