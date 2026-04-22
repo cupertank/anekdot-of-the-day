@@ -4,7 +4,7 @@
   "description": "Daily joke from anekdot.ru — embeddable iframe widget",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js --port 3005"
+    "start": "node server.js"
   },
   "dependencies": {
     "cheerio": "^1.0.0",
