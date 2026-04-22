@@ -46,31 +46,28 @@ function renderPage(jokeHtml) {
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
+    html, body { height: auto; overflow: hidden; }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      background: #fff;
+      background: transparent;
       color: #1a1a1a;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: clamp(16px, 4vw, 32px);
+      padding: 16px;
     }
 
     .card {
       max-width: 600px;
-      width: 100%;
+      text-align: left;
     }
 
     .joke {
-      font-size: clamp(15px, 2.5vw, 18px);
+      font-size: 16px;
       line-height: 1.6;
       white-space: pre-line;
     }
 
     .actions {
-      margin-top: clamp(16px, 3vw, 24px);
+      margin-top: 16px;
       display: flex;
       gap: 12px;
       flex-wrap: wrap;
@@ -80,7 +77,7 @@ function renderPage(jokeHtml) {
     .btn {
       display: inline-block;
       padding: 8px 20px;
-      font-size: clamp(13px, 2vw, 15px);
+      font-size: 14px;
       border: none;
       border-radius: 8px;
       cursor: pointer;
@@ -91,8 +88,8 @@ function renderPage(jokeHtml) {
     .btn:hover { filter: brightness(0.85); }
 
     .source {
-      margin-top: clamp(20px, 4vw, 32px);
-      font-size: clamp(11px, 1.8vw, 13px);
+      margin-top: 20px;
+      font-size: 12px;
       color: #999;
     }
 
@@ -116,6 +113,10 @@ function renderPage(jokeHtml) {
       btn.style.background = "hsl(" + h + "," + s + "%," + l + "%)";
       btn.style.color = l < 55 ? "#fff" : "#1a1a1a";
     })();
+    window.addEventListener("load", function() {
+      var h = document.documentElement.scrollHeight;
+      window.parent.postMessage({ type: "resize", height: h }, "*");
+    });
   </script>
 </body>
 </html>`;
@@ -144,6 +145,12 @@ function renderError() {
 </html>`;
 }
 
+app.use((req, res, next) => {
+  res.removeHeader("X-Frame-Options");
+  res.setHeader("Content-Security-Policy", "frame-ancestors *");
+  next();
+});
+
 app.get("/", async (req, res) => {
   console.log(`[${new Date().toISOString()}] GET / from ${req.ip}`);
   try {
@@ -153,7 +160,6 @@ app.get("/", async (req, res) => {
       return res.send(renderError());
     }
     const joke = jokes[Math.floor(Math.random() * jokes.length)];
-    res.removeHeader("X-Frame-Options");
     res.send(renderPage(joke));
   } catch (err) {
     console.error(`[${new Date().toISOString()}] Failed to fetch jokes:`, err.message);
