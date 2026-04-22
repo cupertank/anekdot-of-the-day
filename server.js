@@ -145,8 +145,10 @@ function renderError() {
 }
 
 app.get("/", async (req, res) => {
+  console.log(`[${new Date().toISOString()}] GET / from ${req.ip}`);
   try {
     const jokes = await fetchJokes();
+    console.log(`[${new Date().toISOString()}] Serving from cache: ${jokes.length} jokes available`);
     if (jokes.length === 0) {
       return res.send(renderError());
     }
@@ -154,7 +156,7 @@ app.get("/", async (req, res) => {
     res.removeHeader("X-Frame-Options");
     res.send(renderPage(joke));
   } catch (err) {
-    console.error("Failed to fetch jokes:", err.message);
+    console.error(`[${new Date().toISOString()}] Failed to fetch jokes:`, err.message);
     res.send(renderError());
   }
 });
