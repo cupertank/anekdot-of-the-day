@@ -2,6 +2,7 @@ const express = require("express");
 const cheerio = require("cheerio");
 const sharp = require("sharp");
 const stirlitzJokes = require("./stirlitz.json");
+const allJokes = require("./jokes.json");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -289,10 +290,7 @@ app.get("/joke.jpg", async (req, res) => {
   }
 
   try {
-    const jokeHtml = await fetchJoke();
-    if (!jokeHtml) {
-      return res.status(503).type("text").send("Не удалось загрузить анекдот");
-    }
+    const jokeHtml = randomItem(allJokes);
     const jokeText = htmlToText(jokeHtml);
     const buf = await generateJokeImage(jokeText);
     imgCache = { buf, ts: now };
@@ -346,24 +344,11 @@ app.get("/stirlitz.jpg", async (req, res) => {
   }
 });
 
-app.get("/", async (req, res) => {
+app.get("/", (req, res) => {
   console.log(`[${new Date().toISOString()}] GET / from ${req.ip}`);
-  try {
-    const joke = await fetchJoke();
-    if (!joke) {
-      return res.send(renderError());
-    }
-    console.log(
-      `[${new Date().toISOString()}] Serving joke (${joke.length} chars)`
-    );
-    res.send(renderPage(joke));
-  } catch (err) {
-    console.error(
-      `[${new Date().toISOString()}] Failed to fetch jokes:`,
-      err.message
-    );
-    res.send(renderError());
-  }
+  const joke = randomItem(allJokes);
+  console.log(`[${new Date().toISOString()}] Serving joke (${joke.length} chars)`);
+  res.send(renderPage(joke));
 });
 
 app.listen(PORT, () => {
