@@ -1,6 +1,6 @@
 services:
   anekdot:
-    build: .
+    image: ghcr.io/cupertank/anekdot-of-the-day:main
     ports:
       - "${PORT:-3000}:3000"
     restart: unless-stopped

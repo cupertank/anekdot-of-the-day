@@ -81,16 +81,14 @@ function renderPage(jokeHtml) {
       display: inline-block;
       padding: 8px 20px;
       font-size: clamp(13px, 2vw, 15px);
-      color: #fff;
-      background: #2563eb;
       border: none;
       border-radius: 8px;
       cursor: pointer;
       text-decoration: none;
-      transition: background 0.2s;
+      transition: filter 0.2s;
     }
 
-    .btn:hover { background: #1d4ed8; }
+    .btn:hover { filter: brightness(0.85); }
 
     .source {
       margin-top: clamp(20px, 4vw, 32px);
@@ -105,10 +103,20 @@ function renderPage(jokeHtml) {
   <div class="card">
     <div class="joke">${jokeHtml}</div>
     <div class="actions">
-      <a class="btn" href="/">Ещё анекдот</a>
+      <a class="btn" id="btn" href="/">Ещё анекдот</a>
     </div>
     <div class="source">Источник: <a href="https://www.anekdot.ru" target="_blank" rel="noopener">anekdot.ru</a></div>
   </div>
+  <script>
+    (function() {
+      var h = Math.floor(Math.random() * 360);
+      var s = 55 + Math.floor(Math.random() * 30);
+      var l = 40 + Math.floor(Math.random() * 20);
+      var btn = document.getElementById("btn");
+      btn.style.background = "hsl(" + h + "," + s + "%," + l + "%)";
+      btn.style.color = l < 55 ? "#fff" : "#1a1a1a";
+    })();
+  </script>
 </body>
 </html>`;
 }
