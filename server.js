@@ -109,7 +109,7 @@ function renderPage(jokeHtml, href = "/") {
     }
 
     @media (prefers-color-scheme: dark) {
-      body { color: #e8e8e8; }
+      body { background: #1a1a1a; color: #e8e8e8; }
     }
 
     .card {
