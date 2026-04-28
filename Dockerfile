@@ -1,7 +1,7 @@
 FROM node:20-alpine
 WORKDIR /app
 COPY package.json package-lock.json jokes.json stirlitz.json ./
-RUN apk add --no-cache font-dejavu vips-dev
+RUN apk add --no-cache font-dejavu vips
 RUN npm ci --omit=dev
 COPY server.js .
 EXPOSE 3000
