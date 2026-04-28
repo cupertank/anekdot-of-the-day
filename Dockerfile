@@ -1,9 +1,9 @@
-FROM node:20-alpine
+FROM oven/bun:alpine
 WORKDIR /app
-COPY package.json package-lock.json jokes.json stirlitz.json ./
+COPY package.json bun.lock jokes.json stirlitz.json ./
 RUN apk add --no-cache font-dejavu vips
-RUN npm ci --omit=dev
+RUN bun install --frozen-lockfile --production
 COPY server.js .
 EXPOSE 3000
-USER node
-CMD ["node", "server.js"]
+USER bun
+CMD ["bun", "server.js"]
