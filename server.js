@@ -1,4 +1,5 @@
 const express = require("express");
+const crypto = require("crypto");
 const sharp = require("sharp");
 const stirlitzJokes = require("./stirlitz.json");
 const allJokes = require("./jokes.json");
@@ -89,14 +90,14 @@ async function generateJokeImage(jokeText, label = "Случайный анек�
 
 // --- Page renderers ---
 
-function renderPage(jokeHtml, href = "/") {
+function renderPage(jokeHtml, href = "/", nonce = "") {
   return `<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Анекдот дня</title>
-  <style>
+  <style nonce="${nonce}">
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     html, body { height: auto; overflow: hidden; }
@@ -153,7 +154,7 @@ function renderPage(jokeHtml, href = "/") {
       <a class="btn" id="btn" href="${href}">Ещё анекдот</a>
     </div>
   </div>
-  <script>
+  <script nonce="${nonce}">
     (function() {
       var h = Math.floor(Math.random() * 360);
       var s = 55 + Math.floor(Math.random() * 30);
@@ -170,8 +171,12 @@ function renderPage(jokeHtml, href = "/") {
 // --- Middleware ---
 
 app.use((req, res, next) => {
+  const nonce = crypto.randomBytes(16).toString("base64");
+  res.locals.nonce = nonce;
   res.removeHeader("X-Frame-Options");
-  res.setHeader("Content-Security-Policy", "frame-ancestors *");
+  res.setHeader("Content-Security-Policy",
+    `default-src 'none'; script-src 'nonce-${nonce}'; style-src 'nonce-${nonce}'; img-src 'self'; base-uri 'self'; form-action 'none'; frame-ancestors *`
+  );
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
@@ -229,7 +234,7 @@ app.get("/joke.jpg", async (req, res) => {
 app.get("/stirlitz", (req, res) => {
   console.log(`[${new Date().toISOString()}] GET /stirlitz from ${req.ip}`);
   const joke = randomItem(stirlitzJokes);
-  res.send(renderPage(htmlEscape(joke), "/stirlitz"));
+  res.send(renderPage(htmlEscape(joke), "/stirlitz", res.locals.nonce));
 });
 
 app.get("/stirlitz.jpg", async (req, res) => {
@@ -265,7 +270,7 @@ app.get("/", (req, res) => {
   console.log(`[${new Date().toISOString()}] GET / from ${req.ip}`);
   const joke = randomItem(allJokes);
   console.log(`[${new Date().toISOString()}] Serving joke (${joke.length} chars)`);
-  res.send(renderPage(joke));
+  res.send(renderPage(joke, "/", res.locals.nonce));
 });
 
 app.listen(PORT, () => {
